@@ -205,6 +205,7 @@ func (n *Node) listenP2PMsg() {
 			}
 
 		case pb.Message_PUSH_TXS:
+			n.logger.WithField("msg", m).Debug("Node received PUSH_TXS message")
 			if n.receiveMsgLimiter != nil && !n.receiveMsgLimiter.Allow() {
 				// rate limit exceeded, refuse to process the message
 				n.logger.Warn("Node received too many PUSH_TXS messages. Rate limiting in effect")
