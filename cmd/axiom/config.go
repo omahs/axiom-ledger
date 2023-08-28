@@ -21,12 +21,12 @@ var configCMD = &cli.Command{
 			Flags: []cli.Flag{
 				&cli.IntFlag{
 					Name:     "default-node-index",
-					Usage:    "use default node config by specified index(1,2,3,4), regenerate if not specified",
+					Usage:    "Use default node config by specified index(1,2,3,4), regenerate if not specified",
 					Required: false,
 				},
 				&cli.BoolFlag{
 					Name:     "solo",
-					Usage:    "generate solo config if specified",
+					Usage:    "Generate solo config if specified",
 					Required: false,
 				},
 			},
@@ -38,7 +38,7 @@ var configCMD = &cli.Command{
 		},
 		{
 			Name:   "node-id",
-			Usage:  "show node id",
+			Usage:  "Show node id",
 			Action: nodeID,
 		},
 		{

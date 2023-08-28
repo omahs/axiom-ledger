@@ -11,7 +11,7 @@ import (
 func main() {
 	app := cli.NewApp()
 	app.Name = "Axiom"
-	app.Usage = "A leading inter-blockchain platform"
+	app.Usage = "A blockchain network with high scalability, privacy, security and composability."
 	app.Compiled = time.Now()
 
 	cli.VersionPrinter = func(c *cli.Context) {

@@ -36,7 +36,7 @@ var startCMD = &cli.Command{
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:     "mode",
-			Usage:    "start axiom in specified mode",
+			Usage:    "Start axiom in specified mode",
 			Required: false,
 			Value:    full,
 		},
