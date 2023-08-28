@@ -174,6 +174,7 @@ func (tp *TxPreCheckMgr) verifySignature(tx *types.Transaction) bool {
 }
 
 func (tp *TxPreCheckMgr) verifyData(tx *types.Transaction) error {
+	return nil
 	// 1. the gas parameters's format are valid
 	if tx.GetType() == types.DynamicFeeTxType {
 		if tx.GetGasFeeCap().BitLen() > 0 || tx.GetGasTipCap().BitLen() > 0 {
