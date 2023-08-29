@@ -94,12 +94,12 @@ func OpenStateDB(file string, kv string) (storage.Storage, error) {
 	var storage storage.Storage
 	var err error
 
-	if kv == "leveldb" {
+	if kv == repo.KVStorageTypeLeveldb {
 		storage, err = leveldb.New(file)
 		if err != nil {
 			return nil, fmt.Errorf("init leveldb failed: %w", err)
 		}
-	} else if kv == "pebble" {
+	} else if kv == repo.KVStorageTypePebble {
 		storage, err = pebble.New(file)
 		if err != nil {
 			return nil, fmt.Errorf("init pebble failed: %w", err)

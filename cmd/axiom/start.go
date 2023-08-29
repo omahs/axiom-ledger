@@ -49,13 +49,13 @@ func start(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	existConfig := fileutil.Exist(p)
+	isConfigExisted := fileutil.Exist(p)
 	r, err := repo.Load(p)
 	if err != nil {
 		return err
 	}
 
-	if !existConfig {
+	if !isConfigExisted {
 		// not generate config, start by solo
 		r.Config.Order.Type = repo.OrderTypeSolo
 		if err := r.Flush(); err != nil {

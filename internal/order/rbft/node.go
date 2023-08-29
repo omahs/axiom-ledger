@@ -199,13 +199,13 @@ func (n *Node) listenP2PMsg() {
 
 		m := &pb.Message{}
 		if err := m.UnmarshalVT(msg.Data); err != nil {
-			n.logger.WithField("err", err).Warn("Unmarshal order message failed")
+			n.logger.WithField("err", err).Error("Unmarshal order message failed")
 			continue
 		}
 		switch m.Type {
 		case pb.Message_CONSENSUS:
 			if err := n.Step(m.Data); err != nil {
-				n.logger.WithField("err", err).Warn("Process order message failed")
+				n.logger.WithField("err", err).Error("Process order message failed")
 				continue
 			}
 
@@ -218,7 +218,7 @@ func (n *Node) listenP2PMsg() {
 
 			tx := &pb.BytesSlice{}
 			if err := tx.UnmarshalVT(m.Data); err != nil {
-				n.logger.WithField("err", err).Warn("Unmarshal txs message failed")
+				n.logger.WithField("err", err).Error("Unmarshal txs message failed")
 				continue
 			}
 			n.submitTxsFromRemote(tx.Slice)
