@@ -185,6 +185,15 @@ func (cm *CouncilManager) propose(addr ethcommon.Address, args *CouncilProposalA
 		cm.gov.logger.Infof("now council member %d, %+v", i, *member)
 	}
 
+	// add log
+	for _, member := range args.Candidates {
+		if ok, oldAddr := cm.addr2NameSystem.GetAddr(member.Name); ok {
+			if oldAddr != member.Address {
+				cm.gov.logger.Infof("name repeated, old addr: %s, member addr: %s", oldAddr, member.Address)
+			}
+		}
+	}
+
 	if !checkAddr2Name(cm.addr2NameSystem, args.Candidates) {
 		return nil, ErrRepeatedName
 	}
