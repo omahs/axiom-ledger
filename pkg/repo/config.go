@@ -174,6 +174,7 @@ type LogModule struct {
 	Profile    string `mapstructure:"profile" toml:"profile"`
 	TSS        string `mapstructure:"tss" toml:"tss"`
 	Finance    string `mapstructure:"finance" toml:"finance"`
+	BlockSync  string `mapstructure:"block_sync" toml:"block_sync"`
 }
 
 type Genesis struct {
@@ -394,6 +395,7 @@ func DefaultConfig(repoRoot string, epochEnable bool) *Config {
 				Profile:    "info",
 				TSS:        "info",
 				Finance:    "info",
+				BlockSync:  "info",
 			},
 		},
 	}

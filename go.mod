@@ -2,6 +2,8 @@ module github.com/axiomesh/axiom
 
 go 1.20
 
+replace github.com/axiomesh/axiom-bft => ../axiom-bft
+replace github.com/axiomesh/axiom-kit => ../axiom-kit
 require (
 	github.com/Rican7/retry v0.3.1
 	github.com/axiomesh/axiom-bft v0.0.3-0.20230913102152-b7ea7029ab76

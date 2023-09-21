@@ -6,7 +6,6 @@ import (
 
 	"github.com/libp2p/go-libp2p/core/peer"
 
-	"github.com/axiomesh/axiom-kit/types/pb"
 	network "github.com/axiomesh/axiom-p2p"
 )
 
@@ -25,12 +24,6 @@ type BasicPeerManager interface {
 
 	// Stop
 	Stop() error
-
-	// Send sends message waiting response
-	Send(string, *pb.Message) (*pb.Message, error)
-
-	// SendWithStream sends message using existed stream
-	SendWithStream(network.Stream, *pb.Message) error
 
 	PeerID() string
 

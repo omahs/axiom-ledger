@@ -48,6 +48,9 @@ type Order interface {
 	// GetTotalPendingTxCount will return the number of pending txs in mempool
 	GetTotalPendingTxCount() uint64
 
+	// GetLowWatermark will return the low watermark
+	GetLowWatermark() uint64
+
 	SubscribeTxEvent(events chan<- []*types.Transaction) event.Subscription
 }
 

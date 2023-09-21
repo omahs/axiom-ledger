@@ -101,6 +101,14 @@ func NewNode(config *common.Config) (*Node, error) {
 	return soloNode, nil
 }
 
+func (n *Node) GetLowWatermark() uint64 {
+	req := &getLowWatermarkReq{
+		Resp: make(chan uint64),
+	}
+	n.recvCh <- req
+	return <-req.Resp
+}
+
 func (n *Node) GetPendingTxByHash(hash *types.Hash) *types.Transaction {
 	request := &getTxReq{
 		Hash: hash.String(),
@@ -111,7 +119,7 @@ func (n *Node) GetPendingTxByHash(hash *types.Hash) *types.Transaction {
 }
 
 func (n *Node) GetTotalPendingTxCount() uint64 {
-	req := &GetTotalPendingTxCountReq{
+	req := &getTotalPendingTxCountReq{
 		Resp: make(chan uint64),
 	}
 	n.recvCh <- req
@@ -289,8 +297,10 @@ func (n *Node) listenEvent() {
 				e.Resp <- n.mempool.GetPendingTxByHash(e.Hash)
 			case *getNonceReq:
 				e.Resp <- n.mempool.GetPendingTxCountByAccount(e.account)
-			case *GetTotalPendingTxCountReq:
+			case *getTotalPendingTxCountReq:
 				e.Resp <- n.mempool.GetTotalPendingTxCount()
+			case *getLowWatermarkReq:
+				e.Resp <- n.lastExec
 			}
 		}
 	}

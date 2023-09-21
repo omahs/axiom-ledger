@@ -1,6 +1,7 @@
 package peermgr
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"testing"
@@ -10,6 +11,7 @@ import (
 	"github.com/Rican7/retry/strategy"
 	"github.com/libp2p/go-libp2p/core/peer"
 	ma "github.com/multiformats/go-multiaddr"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -199,4 +201,46 @@ func TestSwarm_Send(t *testing.T) {
 	err = block.Unmarshal(res.Data)
 	require.Nil(t, err)
 	require.Equal(t, uint64(1), block.BlockHeader.Number)
+}
+
+func TestPipeSend(t *testing.T) {
+	peerCnt := 4
+	swarms := NewSwarms(t, peerCnt, false)
+	defer stopSwarms(t, swarms)
+
+	for swarms[0].CountConnectedPeers() != 3 {
+		time.Sleep(100 * time.Millisecond)
+	}
+	pipe, err := swarms[0].CreatePipe(swarms[0].ctx, "test")
+	pipe1, err := swarms[1].CreatePipe(swarms[1].ctx, "test")
+	require.Nil(t, err)
+	lockCh := make(chan struct{})
+	for i := 0; i < 10; i++ {
+		go func(i int) {
+			// send 0 twice
+			if i == 0 {
+				err = pipe.Send(context.Background(), swarms[1].p2p.PeerID(), []byte(fmt.Sprintf("test%d", i)))
+			}
+			err = pipe.Send(context.Background(), swarms[1].p2p.PeerID(), []byte(fmt.Sprintf("test%d", i)))
+			require.Nil(t, err)
+		}(i)
+	}
+
+	recvMsgList := make([]string, 0)
+	go func() {
+		for {
+			msg := pipe1.Receive(swarms[1].ctx)
+			if msg == nil {
+				return
+			}
+			recvMsgList = append(recvMsgList, string(msg.Data))
+			if len(recvMsgList) == 11 {
+				lockCh <- struct{}{}
+			}
+		}
+	}()
+	<-lockCh
+	duplicatedValues := lo.FindDuplicates(recvMsgList)
+	require.Equal(t, 1, len(duplicatedValues))
+	require.Equal(t, "test0", duplicatedValues[0])
 }

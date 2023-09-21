@@ -1,11 +1,9 @@
 package adaptor
 
 import (
-	"errors"
-	"time"
+	"fmt"
 
-	"github.com/Rican7/retry"
-	"github.com/Rican7/retry/strategy"
+	"github.com/axiomesh/axiom/internal/block_sync"
 	"github.com/sirupsen/logrus"
 
 	"github.com/axiomesh/axiom-bft/common/consensus"
@@ -24,87 +22,99 @@ func (s *RBFTAdaptor) Execute(requests []*types.Transaction, localList []bool, s
 	}
 }
 
-// TODO: process epoch update and checkpoints
-func (s *RBFTAdaptor) StateUpdate(seqNo uint64, digest string, checkpoints []*consensus.SignedCheckpoint, epochChanges ...*consensus.QuorumCheckpoint) {
+func (s *RBFTAdaptor) StateUpdate(seqNo uint64, digest string, checkpoints []*consensus.SignedCheckpoint, epochChanges ...*consensus.EpochChange) {
 	s.StateUpdating = true
 	s.StateUpdateHeight = seqNo
 
-	var peers []string
-	for _, v := range s.EpochInfo.ValidatorSet {
-		if v.AccountAddress != s.config.SelfAccountAddress {
-			peers = append(peers, v.P2PNodeID)
-		}
-	}
+	peers := make([]string, 0)
 
 	chain := s.getChainMetaFunc()
-	s.logger.WithFields(logrus.Fields{
-		"target":       seqNo,
-		"target_hash":  digest,
-		"current":      chain.Height,
-		"current_hash": chain.BlockHash.String(),
-	}).Info("State update start")
-	get := func(peers []string, i int) (block *types.Block, err error) {
-		for _, id := range peers {
-			block, err = s.getBlock(id, i)
-			if err != nil {
-				s.logger.Error(err)
-				continue
-			}
+	currentHeight := chain.Height
+	curBlockHash := chain.BlockHash.String()
 
-			return block, nil
+	// if epochChanges is not nil, it means that the epoch has changed, so we need to get the peers from the latest epochChanges
+	if epochChanges != nil {
+		peers = epochChanges[len(epochChanges)-1].Validators
+		lowHeight := epochChanges[0].Checkpoint.Height()
+		if currentHeight > lowHeight {
+
 		}
-
-		return nil, errors.New("can't get block from all peers")
-	}
-
-	blockCache := make([]*types.Block, seqNo-chain.Height)
-	var block *types.Block
-	for i := seqNo; i > chain.Height; i-- {
-		if err := retry.Retry(func(attempt uint) (err error) {
-			block, err = get(peers, int(i))
-			if err != nil {
-				s.logger.Info(err)
-				return err
+	} else {
+		for _, v := range s.EpochInfo.ValidatorSet {
+			if v.AccountAddress != s.config.SelfAccountAddress {
+				peers = append(peers, v.P2PNodeID)
 			}
-
-			if digest != block.BlockHash.String() {
-				s.logger.WithFields(logrus.Fields{
-					"required": digest,
-					"received": block.BlockHash.String(),
-					"height":   i,
-				}).Error("Block hash is inconsistent in state update state")
-				return err
-			}
-
-			digest = block.BlockHeader.ParentHash.String()
-			blockCache[i-chain.Height-1] = block
-
-			return nil
-		}, strategy.Wait(200*time.Millisecond)); err != nil {
-			s.logger.Error(err)
 		}
 	}
 
-	for _, block := range blockCache {
-		if block == nil {
-			s.logger.Error("Receive a nil block")
+	currentHeight = chain.Height
+
+	// if this node have invalid local state, it means that this node is a Byzantine node, so we need to panic
+	err := s.checkLocalState(currentHeight, checkpoints, epochChanges...)
+	if err != nil {
+		panic(err)
+	}
+
+	syncer, err := block_sync.New(s.logger, peers, curBlockHash, currentHeight, seqNo, s.peerMgr, s.getBlockFunc, checkpoints[0].GetCheckpoint(), epochChanges...)
+	if err != nil {
+		panic(fmt.Errorf("block sync failed, err:%w", err))
+	}
+
+	for {
+		select {
+		case <-syncer.SyncDone():
+			s.logger.WithFields(logrus.Fields{
+				"target":      seqNo,
+				"target_hash": digest,
+			}).Info("State update finished fetch blocks")
 			return
+		case blockCache := <-syncer.Commit():
+			for _, block := range blockCache {
+				if block == nil {
+					s.logger.Error("Receive a nil block")
+					return
+				}
+				localList := make([]bool, len(block.Transactions))
+				for i := 0; i < len(block.Transactions); i++ {
+					localList[i] = false
+				}
+				commitEvent := &common.CommitEvent{
+					Block:     block,
+					LocalList: localList,
+				}
+				s.BlockC <- commitEvent
+			}
 		}
-		localList := make([]bool, len(block.Transactions))
-		for i := 0; i < len(block.Transactions); i++ {
-			localList[i] = false
+	}
+}
+
+func (s *RBFTAdaptor) checkLocalState(curHeight uint64, checkpoints []*consensus.SignedCheckpoint, change ...*consensus.EpochChange) error {
+	// check epoch
+	if change != nil {
+		lowEpoch := change[0]
+		if s.EpochInfo.Epoch > lowEpoch.Checkpoint.Epoch() {
+			return fmt.Errorf("target epoch is too low, current epoch is %d, "+
+				"but the epoch which we need update is %d", s.EpochInfo.Epoch, lowEpoch.Checkpoint.Epoch())
 		}
-		commitEvent := &common.CommitEvent{
-			Block:     block,
-			LocalList: localList,
+		if curHeight > lowEpoch.Checkpoint.Height() {
+			return fmt.Errorf("target epoch height is too low, current height is %d, "+
+				"but the lowest epoch cahnge height which we need update is %d", curHeight, lowEpoch.Checkpoint.Height())
 		}
-		s.BlockC <- commitEvent
 	}
 
-	s.logger.WithFields(logrus.Fields{
-		"target":      seqNo,
-		"target_hash": digest,
-	}).Info("State update finished fetch blocks")
+	// check LocalLatestCheckpoint
+	if curHeight >= checkpoints[0].Height() {
+		localBlock, err := s.getBlockFunc(checkpoints[0].Height())
+		if err != nil {
+			return fmt.Errorf("get local block[height:%d] from ledger failed: %w", checkpoints[0].Height(), err)
+		}
+		if localBlock.BlockHash.String() != checkpoints[0].Checkpoint.Digest() {
+			return fmt.Errorf("local block[height:%d, hash:%s] is inconsistent with remote checkpoint[hash:%s]",
+				checkpoints[0].Height(), localBlock.BlockHash.String(), checkpoints[0].Checkpoint.Digest())
+		}
+	}
+
+	return nil
 }
 
 func (s *RBFTAdaptor) SendFilterEvent(informType rbfttypes.InformType, message ...any) {

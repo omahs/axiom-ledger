@@ -408,6 +408,10 @@ func (n *Node) GetTotalPendingTxCount() uint64 {
 	return n.n.GetTotalPendingTxCount()
 }
 
+func (n *Node) GetLowWatermark() uint64 {
+	return n.n.GetLowWatermark()
+}
+
 func (n *Node) ReportState(height uint64, blockHash *types.Hash, txHashList []*types.Hash) {
 	// need update cached epoch info
 	epochInfo := n.stack.EpochInfo

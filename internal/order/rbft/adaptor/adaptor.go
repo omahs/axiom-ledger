@@ -3,14 +3,12 @@ package adaptor
 import (
 	"context"
 	"crypto/ecdsa"
-	"strconv"
 
 	"github.com/samber/lo"
 	"github.com/sirupsen/logrus"
 
 	rbft "github.com/axiomesh/axiom-bft"
 	"github.com/axiomesh/axiom-kit/types"
-	"github.com/axiomesh/axiom-kit/types/pb"
 	network "github.com/axiomesh/axiom-p2p"
 	"github.com/axiomesh/axiom/internal/order/common"
 	"github.com/axiomesh/axiom/internal/peermgr"
@@ -33,6 +31,7 @@ type RBFTAdaptor struct {
 	BlockC            chan *common.CommitEvent
 	logger            logrus.FieldLogger
 	getChainMetaFunc  func() *types.ChainMeta
+	getBlockFunc      func(height uint64) (*types.Block, error)
 	StateUpdating     bool
 	StateUpdateHeight uint64
 	cancel            context.CancelFunc
@@ -63,6 +62,7 @@ func NewRBFTAdaptor(config *common.Config, blockC chan *common.CommitEvent, canc
 		BlockC:           blockC,
 		logger:           config.Logger,
 		getChainMetaFunc: config.GetChainMetaFunc,
+		getBlockFunc:     config.GetBlockFunc,
 		cancel:           cancel,
 		config:           config,
 	}
@@ -85,23 +85,4 @@ func (s *RBFTAdaptor) UpdateEpoch() error {
 func (s *RBFTAdaptor) SetMsgPipes(msgPipes map[int32]network.Pipe, globalMsgPipe network.Pipe) {
 	s.msgPipes = msgPipes
 	s.globalMsgPipe = globalMsgPipe
-}
-
-func (s *RBFTAdaptor) getBlock(id string, i int) (*types.Block, error) {
-	m := &pb.Message{
-		Type: pb.Message_GET_BLOCK,
-		Data: []byte(strconv.Itoa(i)),
-	}
-
-	res, err := s.peerMgr.Send(id, m)
-	if err != nil {
-		return nil, err
-	}
-
-	block := &types.Block{}
-	if err := block.Unmarshal(res.Data); err != nil {
-		return nil, err
-	}
-
-	return block, nil
 }

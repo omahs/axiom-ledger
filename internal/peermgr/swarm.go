@@ -16,7 +16,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/axiomesh/axiom"
-	"github.com/axiomesh/axiom-kit/types/pb"
 	network "github.com/axiomesh/axiom-p2p"
 	"github.com/axiomesh/axiom/internal/ledger"
 	"github.com/axiomesh/axiom/pkg/repo"
@@ -199,34 +198,6 @@ func (swarm *Swarm) Ping() {
 			return
 		}
 	}
-}
-
-func (swarm *Swarm) SendWithStream(s network.Stream, msg *pb.Message) error {
-	data, err := msg.MarshalVT()
-	if err != nil {
-		return fmt.Errorf("marshal message error: %w", err)
-	}
-
-	return s.AsyncSend(data)
-}
-
-func (swarm *Swarm) Send(to string, msg *pb.Message) (*pb.Message, error) {
-	data, err := msg.MarshalVT()
-	if err != nil {
-		return nil, fmt.Errorf("marshal message error: %w", err)
-	}
-
-	ret, err := swarm.p2p.Send(to, data)
-	if err != nil {
-		return nil, fmt.Errorf("sync send: %w", err)
-	}
-
-	m := &pb.Message{}
-	if err := m.UnmarshalVT(ret); err != nil {
-		return nil, fmt.Errorf("unmarshal message error: %w", err)
-	}
-
-	return m, nil
 }
 
 func (swarm *Swarm) Peers() []peer.AddrInfo {

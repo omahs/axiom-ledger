@@ -114,6 +114,10 @@ func (n *NodeDev) GetPendingTxByHash(_ *types.Hash) *types.Transaction {
 	return nil
 }
 
+func (n *NodeDev) GetLowWaterMark() uint64 {
+	return n.lastExec
+}
+
 func (n *NodeDev) DelNode(_ uint64) error {
 	return nil
 }
