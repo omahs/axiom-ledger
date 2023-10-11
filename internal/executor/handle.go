@@ -264,14 +264,10 @@ func (exec *BlockExecutor) applyTransaction(i int, tx *types.Transaction) *types
 	// TODO: Move to system contract
 	snapshot := statedb.Snapshot()
 
-	// check and update system contract state
-	// TODO: Remove
-	system.CheckAndUpdateAllState(exec.currentHeight, statedb)
-
 	contract, ok := system.GetSystemContract(tx.GetTo())
 	if ok {
 		// execute built contract
-		contract.Reset(statedb)
+		contract.Reset(exec.currentHeight, statedb)
 		// TODO: Move the error section to result
 		result, err = contract.Run(msg)
 	} else {

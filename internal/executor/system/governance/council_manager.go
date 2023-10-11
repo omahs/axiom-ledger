@@ -102,7 +102,7 @@ func NewCouncilManager(cfg *common.SystemContractConfig) *CouncilManager {
 	}
 }
 
-func (cm *CouncilManager) Reset(stateLedger ledger.StateLedger) {
+func (cm *CouncilManager) Reset(lastHeight uint64, stateLedger ledger.StateLedger) {
 	addr := types.NewAddressByStr(common.CouncilManagerContractAddr)
 	cm.account = stateLedger.GetOrCreateAccount(addr)
 	cm.stateLedger = stateLedger
@@ -111,6 +111,9 @@ func (cm *CouncilManager) Reset(stateLedger ledger.StateLedger) {
 	}
 	cm.proposalID = NewProposalID(stateLedger)
 	cm.addr2NameSystem = NewAddr2NameSystem(stateLedger)
+
+	// check and update
+	cm.checkAndUpdateState(lastHeight)
 }
 
 func (cm *CouncilManager) Run(msg *vm.Message) (result *vm.ExecutionResult, err error) {
@@ -306,9 +309,7 @@ func (cm *CouncilManager) EstimateGas(callArgs *types.CallArgs) (uint64, error) 
 	return gas, nil
 }
 
-func (cm *CouncilManager) CheckAndUpdateState(lastHeight uint64, stateLedger ledger.StateLedger) {
-	cm.Reset(stateLedger)
-
+func (cm *CouncilManager) checkAndUpdateState(lastHeight uint64) {
 	if isExist, data := cm.account.Query(CouncilProposalKey); isExist {
 		for _, proposalData := range data {
 			proposal := &CouncilProposal{}
@@ -326,13 +327,10 @@ func (cm *CouncilManager) CheckAndUpdateState(lastHeight uint64, stateLedger led
 				// means proposal is out of deadline,status change to rejected
 				proposal.Status = Rejected
 
-				b, err := cm.saveProposal(proposal)
+				_, err := cm.saveProposal(proposal)
 				if err != nil {
 					cm.gov.logger.Errorf("save proposal error: %s", err)
 				}
-
-				cm.gov.RecordLog(cm.currentLog, VoteMethod, &proposal.BaseProposal, b)
-				cm.gov.SaveLog(stateLedger, cm.currentLog)
 			}
 		}
 	}

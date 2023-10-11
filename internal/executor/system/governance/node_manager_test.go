@@ -166,7 +166,7 @@ func TestNodeManager_RunForPropose(t *testing.T) {
 	}
 
 	for _, test := range testcases {
-		nm.Reset(stateLedger)
+		nm.Reset(1, stateLedger)
 
 		res, err := nm.Run(&vm.Message{
 			From: types.NewAddressByStr(test.Caller).ETHAddress(),
@@ -252,7 +252,7 @@ func TestNodeManager_RunForNodeUpgradePropose(t *testing.T) {
 	}
 
 	for _, test := range testcases {
-		nm.Reset(stateLedger)
+		nm.Reset(1, stateLedger)
 
 		res, err := nm.Run(&vm.Message{
 			From: types.NewAddressByStr(test.Caller).ETHAddress(),
@@ -365,7 +365,7 @@ func TestNodeManager_RunForAddVote(t *testing.T) {
 	})
 
 	// propose
-	nm.Reset(stateLedger)
+	nm.Reset(1, stateLedger)
 	_, err = nm.Run(&vm.Message{
 		From: types.NewAddressByStr(admin1).ETHAddress(),
 		Data: generateNodeAddProposeData(t, NodeExtraArgs{
@@ -422,7 +422,7 @@ func TestNodeManager_RunForAddVote(t *testing.T) {
 	}
 
 	for _, test := range testcases {
-		nm.Reset(stateLedger)
+		nm.Reset(1, stateLedger)
 
 		result, err := nm.Run(&vm.Message{
 			From: types.NewAddressByStr(test.Caller).ETHAddress(),
@@ -487,7 +487,7 @@ func TestNodeManager_RunForRemoveVote(t *testing.T) {
 	})
 
 	// propose
-	nm.Reset(stateLedger)
+	nm.Reset(1, stateLedger)
 	_, err = nm.Run(&vm.Message{
 		From: types.NewAddressByStr(admin1).ETHAddress(),
 		Data: generateNodeRemoveProposeData(t, NodeExtraArgs{
@@ -536,7 +536,7 @@ func TestNodeManager_RunForRemoveVote(t *testing.T) {
 	}
 
 	for _, test := range testcases {
-		nm.Reset(stateLedger)
+		nm.Reset(1, stateLedger)
 
 		result, err := runVoteMethod(nm, &vm.Message{
 			From: types.NewAddressByStr(test.Caller).ETHAddress(),
@@ -600,7 +600,7 @@ func TestNodeManager_RunForUpgradeVote(t *testing.T) {
 	})
 
 	// propose
-	nm.Reset(stateLedger)
+	nm.Reset(1, stateLedger)
 	_, err = nm.Run(&vm.Message{
 		From: types.NewAddressByStr(admin1).ETHAddress(),
 		Data: generateNodeUpgradeProposeData(t, NodeExtraArgs{
@@ -649,7 +649,7 @@ func TestNodeManager_RunForUpgradeVote(t *testing.T) {
 	}
 
 	for _, test := range testcases {
-		nm.Reset(stateLedger)
+		nm.Reset(1, stateLedger)
 
 		result, err := runVoteMethod(nm, &vm.Message{
 			From: types.NewAddressByStr(test.Caller).ETHAddress(),

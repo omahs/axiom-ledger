@@ -235,7 +235,7 @@ func TestRunForPropose(t *testing.T) {
 	}
 
 	for _, test := range testcases {
-		cm.Reset(stateLedger)
+		cm.Reset(1, stateLedger)
 
 		result, err := cm.Run(&vm.Message{
 			From: types.NewAddressByStr(test.Caller).ETHAddress(),
@@ -303,7 +303,7 @@ func TestRunForVote(t *testing.T) {
 	}, "10000000")
 	assert.Nil(t, err)
 
-	cm.Reset(stateLedger)
+	cm.Reset(1, stateLedger)
 
 	cm.propose(types.NewAddressByStr(admin1).ETHAddress(), &CouncilProposalArgs{
 		BaseProposalArgs: BaseProposalArgs{
@@ -431,7 +431,7 @@ func TestRunForVote(t *testing.T) {
 	}
 
 	for _, test := range testcases {
-		cm.Reset(stateLedger)
+		cm.Reset(1, stateLedger)
 
 		result, err := cm.Run(&vm.Message{
 			From: types.NewAddressByStr(test.Caller).ETHAddress(),

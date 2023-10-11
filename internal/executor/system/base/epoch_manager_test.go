@@ -30,12 +30,11 @@ func TestEpochManager(t *testing.T) {
 	epochMgr := NewEpochManager(&common.SystemContractConfig{
 		Logger: logrus.New(),
 	})
-	epochMgr.Reset(stateLedger)
+	epochMgr.Reset(1, stateLedger)
 	_, err = epochMgr.EstimateGas(nil)
 	assert.Error(t, err)
 	_, err = epochMgr.Run(nil)
 	assert.Error(t, err)
-	epochMgr.CheckAndUpdateState(0, stateLedger)
 
 	g := repo.GenesisEpochInfo(false)
 	g.EpochPeriod = 100

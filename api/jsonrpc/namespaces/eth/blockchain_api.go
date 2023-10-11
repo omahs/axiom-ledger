@@ -200,7 +200,11 @@ func DoCall(ctx context.Context, evmCfg repo.EVM, api api.CoreAPI, args types.Ca
 	// check if call system contract
 	systemContract, ok := api.Broker().GetSystemContract(msg.To)
 	if ok {
-		systemContract.Reset(stateLedger)
+		chainMeta, err := api.Chain().Meta()
+		if err != nil {
+			return nil, err
+		}
+		systemContract.Reset(chainMeta.Height, stateLedger)
 		return systemContract.Run(msg)
 	}
 

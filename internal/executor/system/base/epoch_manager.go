@@ -32,11 +32,9 @@ func NewEpochManager(cfg *common.SystemContractConfig) *EpochManager {
 	}
 }
 
-func (m *EpochManager) Reset(stateLedger ledger.StateLedger) {
+func (m *EpochManager) Reset(lastHeight uint64, stateLedger ledger.StateLedger) {
 	m.account = stateLedger.GetOrCreateAccount(types.NewAddressByStr(common.EpochManagerContractAddr))
 }
-
-func (m *EpochManager) CheckAndUpdateState(uint64, ledger.StateLedger) {}
 
 func (m *EpochManager) Run(msg *vm.Message) (*vm.ExecutionResult, error) {
 	// TODO: add query method

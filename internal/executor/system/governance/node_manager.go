@@ -102,7 +102,7 @@ func NewNodeManager(cfg *common.SystemContractConfig) *NodeManager {
 	}
 }
 
-func (nm *NodeManager) Reset(stateLedger ledger.StateLedger) {
+func (nm *NodeManager) Reset(lastHeight uint64, stateLedger ledger.StateLedger) {
 	addr := types.NewAddressByStr(common.NodeManagerContractAddr)
 	nm.account = stateLedger.GetOrCreateAccount(addr)
 	nm.stateLedger = stateLedger
@@ -113,6 +113,9 @@ func (nm *NodeManager) Reset(stateLedger ledger.StateLedger) {
 
 	councilAddr := types.NewAddressByStr(common.CouncilManagerContractAddr)
 	nm.councilAccount = stateLedger.GetOrCreateAccount(councilAddr)
+
+	// check and update
+	nm.checkAndUpdateState(lastHeight)
 }
 
 func (nm *NodeManager) Run(msg *vm.Message) (*vm.ExecutionResult, error) {
@@ -428,9 +431,7 @@ func (nm *NodeManager) EstimateGas(callArgs *types.CallArgs) (uint64, error) {
 	return gas, nil
 }
 
-func (nm *NodeManager) CheckAndUpdateState(lastHeight uint64, stateLedger ledger.StateLedger) {
-	nm.Reset(stateLedger)
-
+func (nm *NodeManager) checkAndUpdateState(lastHeight uint64) {
 	if isExist, data := nm.account.Query(NodeProposalKey); isExist {
 		for _, proposalData := range data {
 			proposal := &NodeProposal{}
@@ -453,13 +454,10 @@ func (nm *NodeManager) CheckAndUpdateState(lastHeight uint64, stateLedger ledger
 					proposal.Status = Approved
 				}
 
-				b, err := nm.saveNodeProposal(proposal)
+				_, err := nm.saveNodeProposal(proposal)
 				if err != nil {
 					nm.gov.logger.Errorf("unmarshal node proposal error: %s", err)
 				}
-
-				nm.gov.RecordLog(nm.currentLog, VoteMethod, &proposal.BaseProposal, b)
-				nm.gov.SaveLog(stateLedger, nm.currentLog)
 			}
 		}
 	}

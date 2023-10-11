@@ -58,10 +58,3 @@ func InitGenesisData(genesis *repo.Genesis, lg ledger.StateLedger) error {
 	}
 	return nil
 }
-
-// CheckAndUpdateAllState check and update all system contract state if need
-func CheckAndUpdateAllState(lastHeight uint64, stateLedger ledger.StateLedger) {
-	for _, contractConstruct := range addr2ContractConstruct {
-		contractConstruct(globalCfg).CheckAndUpdateState(lastHeight, stateLedger)
-	}
-}
