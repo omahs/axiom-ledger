@@ -18,7 +18,6 @@ type Ledger struct {
 type BlockData struct {
 	Block      *types.Block
 	Receipts   []*types.Receipt
-	Accounts   map[string]IAccount
 	TxHashList []*types.Hash
 }
 
@@ -65,12 +64,6 @@ func (l *Ledger) PersistBlockData(blockData *BlockData) {
 	current := time.Now()
 	block := blockData.Block
 	receipts := blockData.Receipts
-	accounts := blockData.Accounts
-
-	err := l.StateLedger.Commit(block.BlockHeader.Number, accounts, block.BlockHeader.StateRoot)
-	if err != nil {
-		panic(err)
-	}
 
 	if err := l.ChainLedger.PersistExecutionResult(block, receipts); err != nil {
 		panic(err)
@@ -82,7 +75,16 @@ func (l *Ledger) PersistBlockData(blockData *BlockData) {
 
 // Rollback rollback ledger to history version
 func (l *Ledger) Rollback(height uint64) error {
-	if err := l.StateLedger.RollbackState(height); err != nil {
+	var stateRoot *types.Hash
+	if height != 0 {
+		block, err := l.ChainLedger.GetBlock(height)
+		if err != nil {
+			return fmt.Errorf("rollback state to height %d failed: %w", height, err)
+		}
+		stateRoot = block.BlockHeader.StateRoot
+	}
+
+	if err := l.StateLedger.RollbackState(height, stateRoot); err != nil {
 		return fmt.Errorf("rollback state to height %d failed: %w", height, err)
 	}
 
@@ -99,9 +101,15 @@ func (l *Ledger) Close() {
 	l.StateLedger.Close()
 }
 
+// NewView load the latest state ledger and chain ledger by default
 func (l *Ledger) NewView() *Ledger {
+	meta := l.ChainLedger.GetChainMeta()
+	block, err := l.ChainLedger.GetBlock(meta.Height)
+	if err != nil {
+		panic(err)
+	}
 	return &Ledger{
 		ChainLedger: l.ChainLedger,
-		StateLedger: l.StateLedger.NewView(),
+		StateLedger: l.StateLedger.NewView(block),
 	}
 }

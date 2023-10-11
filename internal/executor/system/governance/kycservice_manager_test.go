@@ -46,12 +46,10 @@ func TestKycServiceManager_RunForPropose(t *testing.T) {
 	mockCtl := gomock.NewController(t)
 	stateLedger := mock_ledger.NewMockStateLedger(mockCtl)
 
-	accountCache, err := ledger.NewAccountCache()
-	assert.Nil(t, err)
 	repoRoot := t.TempDir()
 	ld, err := leveldb.New(filepath.Join(repoRoot, "kycservice_manager"), nil)
 	assert.Nil(t, err)
-	account := ledger.NewAccount(ld, accountCache, types.NewAddressByStr(common.KycServiceContractAddr), ledger.NewChanger())
+	account := ledger.NewAccount(1, ld, types.NewAddressByStr(common.KycServiceContractAddr), ledger.NewChanger())
 
 	stateLedger.EXPECT().GetOrCreateAccount(gomock.Any()).Return(account).AnyTimes()
 	stateLedger.EXPECT().AddLog(gomock.Any()).AnyTimes()
@@ -184,13 +182,10 @@ func TestKycServiceManager_RunForVoteAdd(t *testing.T) {
 	mockCtl := gomock.NewController(t)
 	stateLedger := mock_ledger.NewMockStateLedger(mockCtl)
 
-	accountCache, err := ledger.NewAccountCache()
-	assert.Nil(t, err)
 	repoRoot := t.TempDir()
-	assert.Nil(t, err)
 	ld, err := leveldb.New(filepath.Join(repoRoot, "kycservice_manager"), nil)
 	assert.Nil(t, err)
-	account := ledger.NewAccount(ld, accountCache, types.NewAddressByStr(common.KycServiceContractAddr), ledger.NewChanger())
+	account := ledger.NewAccount(1, ld, types.NewAddressByStr(common.KycServiceContractAddr), ledger.NewChanger())
 
 	stateLedger.EXPECT().GetOrCreateAccount(gomock.Any()).Return(account).AnyTimes()
 	stateLedger.EXPECT().AddLog(gomock.Any()).AnyTimes()
@@ -342,13 +337,10 @@ func TestKycServiceManager_RunForVoteRemove(t *testing.T) {
 	mockCtl := gomock.NewController(t)
 	stateLedger := mock_ledger.NewMockStateLedger(mockCtl)
 
-	accountCache, err := ledger.NewAccountCache()
-	assert.Nil(t, err)
 	repoRoot := t.TempDir()
-	assert.Nil(t, err)
 	ld, err := leveldb.New(filepath.Join(repoRoot, "kycservice_manager"), nil)
 	assert.Nil(t, err)
-	account := ledger.NewAccount(ld, accountCache, types.NewAddressByStr(common.KycServiceContractAddr), ledger.NewChanger())
+	account := ledger.NewAccount(1, ld, types.NewAddressByStr(common.KycServiceContractAddr), ledger.NewChanger())
 
 	stateLedger.EXPECT().GetOrCreateAccount(gomock.Any()).Return(account).AnyTimes()
 	stateLedger.EXPECT().AddLog(gomock.Any()).AnyTimes()
@@ -596,13 +588,10 @@ func TestKycServiceManager_loadKycProposal(t *testing.T) {
 	mockCtl := gomock.NewController(t)
 	stateLedger := mock_ledger.NewMockStateLedger(mockCtl)
 
-	accountCache, err := ledger.NewAccountCache()
-	assert.Nil(t, err)
 	repoRoot := t.TempDir()
-	assert.Nil(t, err)
 	ld, err := leveldb.New(filepath.Join(repoRoot, "kycservice_manager"), nil)
 	assert.Nil(t, err)
-	account := ledger.NewAccount(ld, accountCache, types.NewAddressByStr(common.KycServiceContractAddr), ledger.NewChanger())
+	account := ledger.NewAccount(1, ld, types.NewAddressByStr(common.KycServiceContractAddr), ledger.NewChanger())
 
 	stateLedger.EXPECT().GetOrCreateAccount(gomock.Any()).Return(account).AnyTimes()
 	ks.Reset(stateLedger)

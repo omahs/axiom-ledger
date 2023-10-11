@@ -15,42 +15,6 @@ import (
 	"github.com/axiomesh/axiom-kit/types"
 )
 
-func TestAccountCache_clear(t *testing.T) {
-	accountCache, err := NewAccountCache()
-	assert.Nil(t, err)
-
-	code := []byte{1}
-	addr := &types.Address{}
-	err = accountCache.add(map[string]IAccount{
-		addr.String(): &SimpleAccount{
-			Addr:           &types.Address{},
-			originAccount:  &InnerAccount{},
-			dirtyAccount:   &InnerAccount{},
-			originState:    make(map[string][]byte),
-			pendingState:   make(map[string][]byte),
-			dirtyState:     make(map[string][]byte),
-			originCode:     nil,
-			dirtyCode:      code,
-			dirtyStateHash: &types.Hash{},
-			ldb:            nil,
-			cache:          nil,
-			changer:        &stateChanger{},
-			suicided:       false,
-		},
-	})
-	assert.Nil(t, err)
-
-	c, ok := accountCache.getCode(addr)
-	assert.True(t, ok)
-	assert.EqualValues(t, code, c)
-
-	accountCache.rmAccount(addr)
-
-	accountCache.clear()
-	_, ok = accountCache.getCode(addr)
-	assert.False(t, ok)
-}
-
 func TestAccount_GetState(t *testing.T) {
 	repoRoot := t.TempDir()
 
@@ -81,7 +45,7 @@ func TestAccount_GetState(t *testing.T) {
 
 			addr := types.NewAddressByStr("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266")
 			stateLedger := ledger.StateLedger.(*StateLedgerImpl)
-			account := NewAccount(stateLedger.ldb, stateLedger.accountCache, addr, NewChanger())
+			account := NewAccount(1, stateLedger.ldb, addr, NewChanger())
 
 			addr1 := account.GetAddress()
 			assert.Equal(t, addr, addr1)
@@ -134,7 +98,7 @@ func TestAccount_AccountBalance(t *testing.T) {
 
 			addr := types.NewAddressByStr("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266")
 			stateLedger := ledger.StateLedger.(*StateLedgerImpl)
-			account := NewAccount(stateLedger.ldb, stateLedger.accountCache, addr, NewChanger())
+			account := NewAccount(1, stateLedger.ldb, addr, NewChanger())
 
 			account.AddBalance(big.NewInt(1))
 			account.SubBalance(big.NewInt(1))
@@ -185,7 +149,7 @@ func TestAccount_setNonce(t *testing.T) {
 
 			addr := types.NewAddressByStr("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266")
 			stateLedger := ledger.StateLedger.(*StateLedgerImpl)
-			account := NewAccount(stateLedger.ldb, stateLedger.accountCache, addr, NewChanger())
+			account := NewAccount(1, stateLedger.ldb, addr, NewChanger())
 
 			account.setNonce(1)
 

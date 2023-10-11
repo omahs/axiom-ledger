@@ -10,6 +10,7 @@ import (
 	"github.com/axiomesh/axiom-ledger/internal/executor/system/common"
 	"github.com/axiomesh/axiom-ledger/internal/ledger"
 	"github.com/axiomesh/axiom-ledger/pkg/repo"
+	common2 "github.com/ethereum/go-ethereum/common"
 )
 
 func initializeGenesisConfig(genesis *repo.Genesis, lg ledger.StateLedger) error {
@@ -25,7 +26,8 @@ func initializeGenesisConfig(genesis *repo.Genesis, lg ledger.StateLedger) error
 
 // Initialize initialize block
 func Initialize(genesis *repo.Genesis, lg *ledger.Ledger) error {
-	lg.StateLedger.PrepareBlock(nil, 1)
+	dummyRootHash := common2.Hash{}
+	lg.StateLedger.PrepareBlock(types.NewHash(dummyRootHash[:]), nil, 1)
 
 	if err := initializeGenesisConfig(genesis, lg.StateLedger); err != nil {
 		return err
@@ -40,7 +42,10 @@ func Initialize(genesis *repo.Genesis, lg *ledger.Ledger) error {
 		return err
 	}
 
-	accounts, stateRoot := lg.StateLedger.FlushDirtyData()
+	stateRoot, err := lg.StateLedger.Commit()
+	if err != nil {
+		return err
+	}
 
 	block := &types.Block{
 		BlockHeader: &types.BlockHeader{
@@ -59,8 +64,7 @@ func Initialize(genesis *repo.Genesis, lg *ledger.Ledger) error {
 	}
 	block.BlockHash = block.Hash()
 	blockData := &ledger.BlockData{
-		Block:    block,
-		Accounts: accounts,
+		Block: block,
 	}
 
 	lg.PersistBlockData(blockData)

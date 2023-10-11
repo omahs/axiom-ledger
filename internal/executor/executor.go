@@ -132,8 +132,14 @@ func (exec *BlockExecutor) ApplyReadonlyTransactions(txs []*types.Transaction) [
 		exec.logger.Errorf("fail to get block at %d: %v", meta.Height, err.Error())
 		return nil
 	}
+	// get last block's stateRoot to init the latest world state trie
+	parentBlock, err := exec.ledger.ChainLedger.GetBlock(block.Height() - 1)
+	if err != nil {
+		exec.logger.Errorf("fail to get block at %d: %v", meta.Height, err.Error())
+		return nil
+	}
 
-	exec.ledger.StateLedger.PrepareBlock(meta.BlockHash, meta.Height)
+	exec.ledger.StateLedger.PrepareBlock(parentBlock.BlockHeader.StateRoot, meta.BlockHash, meta.Height)
 	exec.evm = newEvm(exec.rep.Config.Executor.EVM, meta.Height, uint64(block.BlockHeader.Timestamp), exec.evmChainCfg, exec.ledger.StateLedger, exec.ledger.ChainLedger, "")
 	for i, tx := range txs {
 		exec.ledger.StateLedger.SetTxContext(tx.GetHash(), i)

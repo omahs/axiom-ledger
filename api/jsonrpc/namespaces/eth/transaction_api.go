@@ -98,14 +98,15 @@ func (api *TransactionAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, i
 
 // GetTransactionCount returns the number of transactions at the given address, blockNum is ignored.
 func (api *TransactionAPI) GetTransactionCount(address common.Address, blockNrOrHash *rpctypes.BlockNumberOrHash) (*hexutil.Uint64, error) {
-	api.logger.Debugf("eth_getTransactionCount, address: %s", address)
+	api.logger.Debugf("eth_getTransactionCount, address: %s, blockNrOrHash: %v", address, blockNrOrHash)
 	if blockNrOrHash != nil {
 		if blockNumber, ok := blockNrOrHash.Number(); ok && blockNumber == rpctypes.PendingBlockNumber {
 			nonce := api.api.Broker().GetPendingTxCountByAccount(address.String())
 			return (*hexutil.Uint64)(&nonce), nil
 		}
 	}
-	stateLedger, err := getStateLedgerAt(api.api)
+	api.logger.Debugf("eth_getTransactionCount from ledger")
+	stateLedger, err := getStateLedgerAt(api.api, blockNrOrHash)
 	if err != nil {
 		return nil, err
 	}
@@ -244,7 +245,11 @@ func (api *TransactionAPI) SendRawTransaction(data hexutil.Bytes) (common.Hash, 
 
 	// kyc verify switch
 	if api.rep.Config.Access.KycVerification == repo.EnableKycVerify {
-		success, err := access.Verify(api.api.Broker().GetViewStateLedger().NewView(), tx.GetFrom())
+		stateLedger, err := getStateLedgerAt(api.api, nil) // use the latest state ledger
+		if err != nil {
+			return [32]byte{}, err
+		}
+		success, err := access.Verify(stateLedger, tx.GetFrom())
 		if err != nil || !success {
 			return [32]byte{}, err
 		}

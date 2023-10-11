@@ -2,6 +2,7 @@ package eth
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -18,13 +19,47 @@ var (
 	ErrNotSupportApiError = errors.New("unsupported interface")
 )
 
-func getStateLedgerAt(api api.CoreAPI) (ledger.StateLedger, error) {
-	leger := api.Broker().GetViewStateLedger().NewView()
-	if leger == nil {
+func getStateLedgerAt(api api.CoreAPI, blockNrOrHash *rpctypes.BlockNumberOrHash) (ledger.StateLedger, error) {
+	var block *types.Block
+	var err error
+
+	meta, err := api.Chain().Meta()
+	if err != nil {
+		return nil, err
+	}
+
+	if blockNrOrHash != nil {
+		if blockNumber, ok := blockNrOrHash.Number(); ok {
+			if blockNumber == rpctypes.PendingBlockNumber || blockNumber == rpctypes.LatestBlockNumber {
+				block, err = api.Broker().GetBlock("HEIGHT", fmt.Sprintf("%d", meta.Height))
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				block, err = api.Broker().GetBlock("HEIGHT", fmt.Sprintf("%d", blockNumber))
+				if err != nil {
+					return nil, err
+				}
+			}
+		} else if blockHash, ok := blockNrOrHash.Hash(); ok {
+			block, err = api.Broker().GetBlock("HASH", fmt.Sprintf("%s", blockHash))
+			if err != nil {
+				return nil, err
+			}
+		}
+	} else {
+		// default case: use the latest committed block
+		block, err = api.Broker().GetBlock("HEIGHT", fmt.Sprintf("%d", meta.Height))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	lg := api.Broker().GetViewStateLedger().NewView(block)
+	if lg == nil {
 		return nil, errors.New("GetViewStateLedger error")
 	}
-	return leger, nil
-	// todo: supplementary block height and block hash processing
+	return lg, nil
 }
 
 // NewRPCTransaction returns a transaction that will serialize to the RPC representation

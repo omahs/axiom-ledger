@@ -19,12 +19,10 @@ import (
 func TestEpochManager(t *testing.T) {
 	mockCtl := gomock.NewController(t)
 	stateLedger := mock_ledger.NewMockStateLedger(mockCtl)
-	accountCache, err := ledger.NewAccountCache()
-	assert.Nil(t, err)
 	repoRoot := t.TempDir()
 	ld, err := leveldb.New(filepath.Join(repoRoot, "epoch_manager"), nil)
 	assert.Nil(t, err)
-	account := ledger.NewAccount(ld, accountCache, types.NewAddressByStr(common.EpochManagerContractAddr), ledger.NewChanger())
+	account := ledger.NewAccount(1, ld, types.NewAddressByStr(common.EpochManagerContractAddr), ledger.NewChanger())
 	stateLedger.EXPECT().GetOrCreateAccount(gomock.Any()).Return(account).AnyTimes()
 
 	epochMgr := NewEpochManager(&common.SystemContractConfig{

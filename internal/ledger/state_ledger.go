@@ -7,6 +7,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/axiomesh/axiom-kit/jmt"
 	"github.com/axiomesh/axiom-kit/storage"
 	"github.com/axiomesh/axiom-kit/types"
 	"github.com/axiomesh/axiom-ledger/internal/storagemgr"
@@ -18,7 +19,6 @@ var _ StateLedger = (*StateLedgerImpl)(nil)
 
 var (
 	ErrorRollbackToHigherNumber  = errors.New("rollback to higher blockchain height")
-	ErrorRollbackWithoutJournal  = errors.New("rollback to blockchain height without journal")
 	ErrorRollbackTooMuch         = errors.New("rollback too much block")
 	ErrorRemoveJournalOutOfRange = errors.New("remove journal out of range")
 )
@@ -31,10 +31,10 @@ type revision struct {
 type StateLedgerImpl struct {
 	logger        logrus.FieldLogger
 	ldb           storage.Storage
+	accountTrie   *jmt.JMT // keep track of the latest world state (dirty or committed)
 	minJnlHeight  uint64
 	maxJnlHeight  uint64
 	accounts      map[string]IAccount
-	accountCache  *AccountCache
 	blockJournals map[string]*BlockJournal
 	prevJnlHash   *types.Hash
 	repo          *repo.Repo
@@ -55,15 +55,15 @@ type StateLedgerImpl struct {
 }
 
 // NewView get a view
-func (l *StateLedgerImpl) NewView() StateLedger {
-	return &StateLedgerImpl{
+func (l *StateLedgerImpl) NewView(block *types.Block) StateLedger {
+	l.logger.Debugf("[NewView] height: %v, stateRoot: %v", block.BlockHeader.Number, block.BlockHeader.StateRoot)
+	lg := &StateLedgerImpl{
 		repo:          l.repo,
 		logger:        l.logger,
 		ldb:           l.ldb,
 		minJnlHeight:  l.minJnlHeight,
 		maxJnlHeight:  l.maxJnlHeight,
 		accounts:      make(map[string]IAccount),
-		accountCache:  l.accountCache,
 		prevJnlHash:   l.prevJnlHash,
 		preimages:     make(map[types.Hash][]byte),
 		changer:       NewChanger(),
@@ -71,6 +71,8 @@ func (l *StateLedgerImpl) NewView() StateLedger {
 		logs:          NewEvmLogs(),
 		blockJournals: make(map[string]*BlockJournal),
 	}
+	lg.refreshAccountTrie(block.BlockHeader.StateRoot)
+	return lg
 }
 
 func (l *StateLedgerImpl) Finalise() {
@@ -91,11 +93,6 @@ func newStateLedger(rep *repo.Repo, stateStorage storage.Storage) (StateLedger, 
 		prevJnlHash = blockJournal.ChangedHash
 	}
 
-	accountCache, err := NewAccountCache()
-	if err != nil {
-		return nil, fmt.Errorf("init account cache failed: %w", err)
-	}
-
 	ledger := &StateLedgerImpl{
 		repo:          rep,
 		logger:        loggers.Logger(loggers.Storage),
@@ -103,7 +100,6 @@ func newStateLedger(rep *repo.Repo, stateStorage storage.Storage) (StateLedger, 
 		minJnlHeight:  minJnlHeight,
 		maxJnlHeight:  maxJnlHeight,
 		accounts:      make(map[string]IAccount),
-		accountCache:  accountCache,
 		prevJnlHash:   prevJnlHash,
 		preimages:     make(map[types.Hash][]byte),
 		changer:       NewChanger(),
@@ -111,6 +107,8 @@ func newStateLedger(rep *repo.Repo, stateStorage storage.Storage) (StateLedger, 
 		logs:          NewEvmLogs(),
 		blockJournals: make(map[string]*BlockJournal),
 	}
+	ledger.refreshAccountTrie(nil)
+
 	return ledger, nil
 }
 
@@ -126,10 +124,6 @@ func NewStateLedger(rep *repo.Repo, storageDir string) (StateLedger, error) {
 	}
 
 	return newStateLedger(rep, stateStorage)
-}
-
-func (l *StateLedgerImpl) AccountCache() *AccountCache {
-	return l.accountCache
 }
 
 func (l *StateLedgerImpl) SetTxContext(thash *types.Hash, ti int) {

@@ -40,12 +40,10 @@ func TestKycVerification_RunForSubmit(t *testing.T) {
 	mockCtl := gomock.NewController(t)
 	stateLedger := mock_ledger.NewMockStateLedger(mockCtl)
 
-	accountCache, err := ledger.NewAccountCache()
-	assert.Nil(t, err)
 	repoRoot := t.TempDir()
 	ld, err := leveldb.New(filepath.Join(repoRoot, "kyc_verification"), nil)
 	assert.Nil(t, err)
-	account := ledger.NewAccount(ld, accountCache, types.NewAddressByStr(common.KycVerifyContractAddr), ledger.NewChanger())
+	account := ledger.NewAccount(1, ld, types.NewAddressByStr(common.KycVerifyContractAddr), ledger.NewChanger())
 
 	stateLedger.EXPECT().GetOrCreateAccount(gomock.Any()).Return(account).AnyTimes()
 	stateLedger.EXPECT().AddLog(gomock.Any()).AnyTimes()
@@ -148,12 +146,10 @@ func TestKycVerification_RunForRemove(t *testing.T) {
 	mockCtl := gomock.NewController(t)
 	stateLedger := mock_ledger.NewMockStateLedger(mockCtl)
 
-	accountCache, err := ledger.NewAccountCache()
-	assert.Nil(t, err)
 	repoRoot := t.TempDir()
 	ld, err := leveldb.New(filepath.Join(repoRoot, "kyc_verification"), nil)
 	assert.Nil(t, err)
-	account := ledger.NewAccount(ld, accountCache, types.NewAddressByStr(common.KycVerifyContractAddr), ledger.NewChanger())
+	account := ledger.NewAccount(1, ld, types.NewAddressByStr(common.KycVerifyContractAddr), ledger.NewChanger())
 
 	stateLedger.EXPECT().GetOrCreateAccount(gomock.Any()).Return(account).AnyTimes()
 	stateLedger.EXPECT().AddLog(gomock.Any()).AnyTimes()
@@ -444,12 +440,10 @@ func TestAddAndRemoveKycService(t *testing.T) {
 	mockCtl := gomock.NewController(t)
 	stateLedger := mock_ledger.NewMockStateLedger(mockCtl)
 
-	accountCache, err := ledger.NewAccountCache()
-	assert.Nil(t, err)
 	repoRoot := t.TempDir()
 	ld, err := leveldb.New(filepath.Join(repoRoot, "kyc_verification"), nil)
 	assert.Nil(t, err)
-	account := ledger.NewAccount(ld, accountCache, types.NewAddressByStr(common.KycVerifyContractAddr), ledger.NewChanger())
+	account := ledger.NewAccount(1, ld, types.NewAddressByStr(common.KycVerifyContractAddr), ledger.NewChanger())
 
 	stateLedger.EXPECT().GetOrCreateAccount(gomock.Any()).Return(account).AnyTimes()
 
@@ -494,12 +488,10 @@ func TestGetKycServices(t *testing.T) {
 	mockCtl := gomock.NewController(t)
 	stateLedger := mock_ledger.NewMockStateLedger(mockCtl)
 
-	accountCache, err := ledger.NewAccountCache()
-	assert.Nil(t, err)
 	repoRoot := t.TempDir()
 	ld, err := leveldb.New(filepath.Join(repoRoot, "kyc_verification"), nil)
 	assert.Nil(t, err)
-	account := ledger.NewAccount(ld, accountCache, types.NewAddressByStr(common.KycVerifyContractAddr), ledger.NewChanger())
+	account := ledger.NewAccount(1, ld, types.NewAddressByStr(common.KycVerifyContractAddr), ledger.NewChanger())
 
 	stateLedger.EXPECT().GetOrCreateAccount(gomock.Any()).Return(account).AnyTimes()
 
@@ -527,12 +519,10 @@ func TestGetKycServices(t *testing.T) {
 func TestSetKycService(t *testing.T) {
 	mockCtl := gomock.NewController(t)
 	stateLedger := mock_ledger.NewMockStateLedger(mockCtl)
-	accountCache, err := ledger.NewAccountCache()
-	assert.Nil(t, err)
 	repoRoot := t.TempDir()
 	ld, err := leveldb.New(filepath.Join(repoRoot, "kyc_verification"), nil)
 	assert.Nil(t, err)
-	account := ledger.NewAccount(ld, accountCache, types.NewAddressByStr(common.KycVerifyContractAddr), ledger.NewChanger())
+	account := ledger.NewAccount(1, ld, types.NewAddressByStr(common.KycVerifyContractAddr), ledger.NewChanger())
 	stateLedger.EXPECT().GetOrCreateAccount(gomock.Any()).Return(account).AnyTimes()
 	kycservices := []*KycService{
 		{
@@ -550,12 +540,10 @@ func TestKycVerification_SaveLog(t *testing.T) {
 	mockCtl := gomock.NewController(t)
 	stateLedger := mock_ledger.NewMockStateLedger(mockCtl)
 
-	accountCache, err := ledger.NewAccountCache()
-	assert.Nil(t, err)
 	repoRoot := t.TempDir()
 	ld, err := leveldb.New(filepath.Join(repoRoot, "kyc_verification"), nil)
 	assert.Nil(t, err)
-	account := ledger.NewAccount(ld, accountCache, types.NewAddressByStr(common.KycVerifyContractAddr), ledger.NewChanger())
+	account := ledger.NewAccount(1, ld, types.NewAddressByStr(common.KycVerifyContractAddr), ledger.NewChanger())
 	stateLedger.EXPECT().GetOrCreateAccount(gomock.Any()).Return(account).AnyTimes()
 
 	stateLedger.EXPECT().AddLog(gomock.Any()).AnyTimes()
@@ -635,12 +623,10 @@ func TestVerify(t *testing.T) {
 	mockCtl := gomock.NewController(t)
 	stateLedger := mock_ledger.NewMockStateLedger(mockCtl)
 
-	accountCache, err := ledger.NewAccountCache()
-	assert.Nil(t, err)
 	repoRoot := t.TempDir()
 	ld, err := leveldb.New(filepath.Join(repoRoot, "kyc_verification"), nil)
 	assert.Nil(t, err)
-	account := ledger.NewAccount(ld, accountCache, types.NewAddressByStr(common.KycVerifyContractAddr), ledger.NewChanger())
+	account := ledger.NewAccount(1, ld, types.NewAddressByStr(common.KycVerifyContractAddr), ledger.NewChanger())
 	stateLedger.EXPECT().GetOrCreateAccount(gomock.Any()).Return(account).AnyTimes()
 
 	// test fail to get state
@@ -744,12 +730,10 @@ func TestKycVerification_ErrorSubmit(t *testing.T) {
 	mockCtl := gomock.NewController(t)
 	stateLedger := mock_ledger.NewMockStateLedger(mockCtl)
 
-	accountCache, err := ledger.NewAccountCache()
-	assert.Nil(t, err)
 	repoRoot := t.TempDir()
 	ld, err := leveldb.New(filepath.Join(repoRoot, "kyc_verification"), nil)
 	assert.Nil(t, err)
-	account := ledger.NewAccount(ld, accountCache, types.NewAddressByStr(common.KycVerifyContractAddr), ledger.NewChanger())
+	account := ledger.NewAccount(1, ld, types.NewAddressByStr(common.KycVerifyContractAddr), ledger.NewChanger())
 
 	stateLedger.EXPECT().GetOrCreateAccount(gomock.Any()).Return(account).AnyTimes()
 	stateLedger.EXPECT().AddLog(gomock.Any()).AnyTimes()
@@ -804,12 +788,10 @@ func TestKycVerification_ErrorRemove(t *testing.T) {
 	mockCtl := gomock.NewController(t)
 	stateLedger := mock_ledger.NewMockStateLedger(mockCtl)
 
-	accountCache, err := ledger.NewAccountCache()
-	assert.Nil(t, err)
 	repoRoot := t.TempDir()
 	ld, err := leveldb.New(filepath.Join(repoRoot, "kyc_verification"), nil)
 	assert.Nil(t, err)
-	account := ledger.NewAccount(ld, accountCache, types.NewAddressByStr(common.KycVerifyContractAddr), ledger.NewChanger())
+	account := ledger.NewAccount(1, ld, types.NewAddressByStr(common.KycVerifyContractAddr), ledger.NewChanger())
 
 	stateLedger.EXPECT().GetOrCreateAccount(gomock.Any()).Return(account).AnyTimes()
 	stateLedger.EXPECT().AddLog(gomock.Any()).AnyTimes()
@@ -850,12 +832,10 @@ func TestCheckInServices(t *testing.T) {
 	mockCtl := gomock.NewController(t)
 	stateLedger := mock_ledger.NewMockStateLedger(mockCtl)
 
-	accountCache, err := ledger.NewAccountCache()
-	assert.Nil(t, err)
 	repoRoot := t.TempDir()
 	ld, err := leveldb.New(filepath.Join(repoRoot, "kyc_verification"), nil)
 	assert.Nil(t, err)
-	account := ledger.NewAccount(ld, accountCache, types.NewAddressByStr(common.KycVerifyContractAddr), ledger.NewChanger())
+	account := ledger.NewAccount(1, ld, types.NewAddressByStr(common.KycVerifyContractAddr), ledger.NewChanger())
 
 	stateLedger.EXPECT().GetOrCreateAccount(gomock.Any()).Return(account).AnyTimes()
 	state := CheckInServices(account, admin1)
@@ -870,12 +850,10 @@ func TestCheckInServices(t *testing.T) {
 func TestInitKycServicesAndKycInfos(t *testing.T) {
 	mockCtl := gomock.NewController(t)
 	stateLedger := mock_ledger.NewMockStateLedger(mockCtl)
-	accountCache, err := ledger.NewAccountCache()
-	assert.Nil(t, err)
 	repoRoot := t.TempDir()
 	ld, err := leveldb.New(filepath.Join(repoRoot, "kyc_verification"), nil)
 	assert.Nil(t, err)
-	account := ledger.NewAccount(ld, accountCache, types.NewAddressByStr(common.KycVerifyContractAddr), ledger.NewChanger())
+	account := ledger.NewAccount(1, ld, types.NewAddressByStr(common.KycVerifyContractAddr), ledger.NewChanger())
 
 	stateLedger.EXPECT().GetOrCreateAccount(gomock.Any()).Return(account).AnyTimes()
 

@@ -307,35 +307,35 @@ func (cm *CouncilManager) EstimateGas(callArgs *types.CallArgs) (uint64, error) 
 }
 
 func (cm *CouncilManager) CheckAndUpdateState(lastHeight uint64, stateLedger ledger.StateLedger) {
-	cm.Reset(stateLedger)
-
-	if isExist, data := cm.account.Query(CouncilProposalKey); isExist {
-		for _, proposalData := range data {
-			proposal := &CouncilProposal{}
-			if err := json.Unmarshal(proposalData, proposal); err != nil {
-				cm.gov.logger.Errorf("unmarshal council proposal error: %s", err)
-				return
-			}
-
-			if proposal.Status == Approved || proposal.Status == Rejected {
-				// proposal is finnished, no need update
-				continue
-			}
-
-			if proposal.BlockNumber != 0 && proposal.BlockNumber <= lastHeight {
-				// means proposal is out of deadline,status change to rejected
-				proposal.Status = Rejected
-
-				b, err := cm.saveProposal(proposal)
-				if err != nil {
-					cm.gov.logger.Errorf("save proposal error: %s", err)
-				}
-
-				cm.gov.RecordLog(cm.currentLog, VoteMethod, &proposal.BaseProposal, b)
-				cm.gov.SaveLog(stateLedger, cm.currentLog)
-			}
-		}
-	}
+	//cm.Reset(stateLedger)
+	//
+	//if isExist, data := cm.account.Query(CouncilProposalKey); isExist {
+	//	for _, proposalData := range data {
+	//		proposal := &CouncilProposal{}
+	//		if err := json.Unmarshal(proposalData, proposal); err != nil {
+	//			cm.gov.logger.Errorf("unmarshal council proposal error: %s", err)
+	//			return
+	//		}
+	//
+	//		if proposal.Status == Approved || proposal.Status == Rejected {
+	//			// proposal is finnished, no need update
+	//			continue
+	//		}
+	//
+	//		if proposal.BlockNumber != 0 && proposal.BlockNumber <= lastHeight {
+	//			// means proposal is out of deadline,status change to rejected
+	//			proposal.Status = Rejected
+	//
+	//			b, err := cm.saveProposal(proposal)
+	//			if err != nil {
+	//				cm.gov.logger.Errorf("save proposal error: %s", err)
+	//			}
+	//
+	//			cm.gov.RecordLog(cm.currentLog, VoteMethod, &proposal.BaseProposal, b)
+	//			cm.gov.SaveLog(stateLedger, cm.currentLog)
+	//		}
+	//	}
+	//}
 }
 
 func InitCouncilMembers(lg ledger.StateLedger, admins []*repo.Admin, initBlance string) error {
@@ -365,19 +365,20 @@ func InitCouncilMembers(lg ledger.StateLedger, admins []*repo.Admin, initBlance 
 	return nil
 }
 
+// todo refactor it
 func (cm *CouncilManager) checkFinishedAllProposal() bool {
-	if isExist, data := cm.account.Query(CouncilProposalKey); isExist {
-		for _, proposalData := range data {
-			proposal := &CouncilProposal{}
-			if err := json.Unmarshal(proposalData, proposal); err != nil {
-				return false
-			}
-
-			if proposal.Status == Voting {
-				return false
-			}
-		}
-	}
+	//if isExist, data := cm.account.Query(CouncilProposalKey); isExist {
+	//	for _, proposalData := range data {
+	//		proposal := &CouncilProposal{}
+	//		if err := json.Unmarshal(proposalData, proposal); err != nil {
+	//			return false
+	//		}
+	//
+	//		if proposal.Status == Voting {
+	//			return false
+	//		}
+	//	}
+	//}
 
 	// TODO: add other proposals status check
 	return true

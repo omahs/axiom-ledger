@@ -27,35 +27,35 @@ type blockJournalEntry struct {
 	CodeChanged    bool
 }
 
-func revertJournal(journal *blockJournalEntry, batch storage.Batch) {
-	if journal.AccountChanged {
-		if journal.PrevAccount != nil {
-			data, err := journal.PrevAccount.Marshal()
-			if err != nil {
-				panic(err)
-			}
-			batch.Put(compositeKey(accountKey, journal.Address), data)
-		} else {
-			batch.Delete(compositeKey(accountKey, journal.Address))
-		}
-	}
-
-	for key, val := range journal.PrevStates {
-		if val != nil {
-			batch.Put(composeStateKey(journal.Address, []byte(key)), val)
-		} else {
-			batch.Delete(composeStateKey(journal.Address, []byte(key)))
-		}
-	}
-
-	if journal.CodeChanged {
-		if journal.PrevCode != nil {
-			batch.Put(compositeKey(codeKey, journal.Address), journal.PrevCode)
-		} else {
-			batch.Delete(compositeKey(codeKey, journal.Address))
-		}
-	}
-}
+//func revertJournal(journal *blockJournalEntry, batch storage.Batch) {
+//	if journal.AccountChanged {
+//		if journal.PrevAccount != nil {
+//			data, err := journal.PrevAccount.Marshal()
+//			if err != nil {
+//				panic(err)
+//			}
+//			batch.Put(compositeKey(accountKey, journal.Address), data)
+//		} else {
+//			batch.Delete(compositeKey(accountKey, journal.Address))
+//		}
+//	}
+//
+//	for key, val := range journal.PrevStates {
+//		if val != nil {
+//			batch.Put(composeStateKey(journal.Address, []byte(key)), val)
+//		} else {
+//			batch.Delete(composeStateKey(journal.Address, []byte(key)))
+//		}
+//	}
+//
+//	if journal.CodeChanged {
+//		if journal.PrevCode != nil {
+//			batch.Put(compositeKey(codeKey, journal.Address), journal.PrevCode)
+//		} else {
+//			batch.Delete(compositeKey(codeKey, journal.Address))
+//		}
+//	}
+//}
 
 func getJournalRange(ldb storage.Storage) (uint64, uint64) {
 	minHeight := uint64(0)

@@ -131,7 +131,6 @@ type (
 
 func (ch createObjectChange) revert(l *StateLedgerImpl) {
 	delete(l.accounts, ch.account.String())
-	l.accountCache.rmAccount(ch.account)
 }
 
 func (ch createObjectChange) dirtied() *types.Address {
