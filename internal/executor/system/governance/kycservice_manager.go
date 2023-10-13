@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	KycProposalGas uint64 = 30000
-	KycVoteGas     uint64 = 30000
+	KycProposalGas uint64 = 35000
+	KycVoteGas     uint64 = 35000
 	KycProposalKey        = "KycProposal"
 )
 
