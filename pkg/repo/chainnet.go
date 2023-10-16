@@ -33,7 +33,12 @@ func AriesConfig() *Config {
 		JsonRPC: JsonRPC{
 			GasCap:     300000000,
 			EVMTimeout: Duration(5 * time.Second),
-			Limiter: JLimiter{
+			ReadLimiter: JLimiter{
+				Interval: 50,
+				Quantum:  500,
+				Capacity: 10000,
+			},
+			WriteLimiter: JLimiter{
 				Interval: 50,
 				Quantum:  500,
 				Capacity: 10000,

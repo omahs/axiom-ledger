@@ -86,7 +86,8 @@ type Port struct {
 type JsonRPC struct {
 	GasCap                       uint64   `mapstructure:"gas_cap" toml:"gas_cap"`
 	EVMTimeout                   Duration `mapstructure:"evm_timeout" toml:"evm_timeout"`
-	Limiter                      JLimiter `mapstructure:"limiter" toml:"limiter"`
+	ReadLimiter                  JLimiter `mapstructure:"read_limiter" toml:"read_limiter"`
+	WriteLimiter                 JLimiter `mapstructure:"write_limiter" toml:"write_limiter"`
 	RejectTxsIfConsensusAbnormal bool     `mapstructure:"reject_txs_if_consensus_abnormal" toml:"reject_txs_if_consensus_abnormal"`
 }
 
@@ -284,7 +285,12 @@ func DefaultConfig(epochEnable bool) *Config {
 		JsonRPC: JsonRPC{
 			GasCap:     300000000,
 			EVMTimeout: Duration(5 * time.Second),
-			Limiter: JLimiter{
+			ReadLimiter: JLimiter{
+				Interval: 50,
+				Quantum:  500,
+				Capacity: 10000,
+			},
+			WriteLimiter: JLimiter{
 				Interval: 50,
 				Quantum:  500,
 				Capacity: 10000,

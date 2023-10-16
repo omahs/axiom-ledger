@@ -2,6 +2,7 @@ package jsonrpc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -23,10 +24,11 @@ type ChainBrokerService struct {
 	// genesis     *repo.Genesis
 	api api.CoreAPI
 
-	server      *rpc.Server
-	wsServer    *rpc.Server
-	logger      logrus.FieldLogger
-	rateLimiter *ratelimiter.JRateLimiter
+	server              *rpc.Server
+	wsServer            *rpc.Server
+	logger              logrus.FieldLogger
+	rateLimiterForRead  *ratelimiter.JRateLimiter
+	rateLimiterForWrite *ratelimiter.JRateLimiter
 
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -35,20 +37,25 @@ type ChainBrokerService struct {
 func NewChainBrokerService(coreAPI api.CoreAPI, config *repo.Config) (*ChainBrokerService, error) {
 	logger := loggers.Logger(loggers.API)
 
-	jLimiter := config.JsonRPC.Limiter
-	rateLimiter, err := ratelimiter.NewJRateLimiterWithQuantum(jLimiter.Interval.ToDuration(), jLimiter.Capacity, jLimiter.Quantum)
+	readLimiter, err := ratelimiter.NewJRateLimiterWithQuantum(config.JsonRPC.ReadLimiter.Interval.ToDuration(), config.JsonRPC.ReadLimiter.Capacity, config.JsonRPC.ReadLimiter.Quantum)
 	if err != nil {
-		return nil, fmt.Errorf("create rate limiter failed: %w", err)
+		return nil, fmt.Errorf("create read rate limiter failed: %w", err)
+	}
+
+	writeLimiter, err := ratelimiter.NewJRateLimiterWithQuantum(config.JsonRPC.WriteLimiter.Interval.ToDuration(), config.JsonRPC.WriteLimiter.Capacity, config.JsonRPC.WriteLimiter.Quantum)
+	if err != nil {
+		return nil, fmt.Errorf("create write rate limiter failed: %w", err)
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cbs := &ChainBrokerService{
-		logger:      logger,
-		config:      config,
-		api:         coreAPI,
-		ctx:         ctx,
-		cancel:      cancel,
-		rateLimiter: rateLimiter,
+		logger:              logger,
+		config:              config,
+		api:                 coreAPI,
+		ctx:                 ctx,
+		cancel:              cancel,
+		rateLimiterForRead:  readLimiter,
+		rateLimiterForWrite: writeLimiter,
 	}
 
 	if err := cbs.init(); err != nil {
@@ -150,8 +157,48 @@ func (cbs *ChainBrokerService) Stop() error {
 
 func (cbs *ChainBrokerService) tokenBucketMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		var rateLimiter *ratelimiter.JRateLimiter
+		if r.Method == "POST" {
+			body := r.Body
+			var request interface{}
+			cbs.logger.Info("--------------body", body)
+			if err := json.NewDecoder(body).Decode(&request); err != nil {
+				cbs.logger.Info("--------------err1：", err)
+				// 	http.Error(w, "Invalid request", http.StatusBadRequest)
+				return
+			}
+			cbs.logger.Info("--------------request：", request)
+
+			rateLimiter = cbs.rateLimiterForRead
+			switch req := request.(type) {
+			case []interface{}:
+				cbs.logger.Info("---------reqMap：", req)
+				for _, req := range req {
+					if reqMap, ok := req.(map[string]interface{}); ok {
+
+						cbs.logger.Info("---------reqMap：", reqMap)
+						method, ok := reqMap["method"].(string)
+						if !ok {
+							cbs.logger.Info("--------------err3")
+						}
+
+						if method == "eth_sendRawTransaction" {
+							rateLimiter = cbs.rateLimiterForWrite
+							cbs.logger.Info("tokenBucketMiddleware-rateLimiterForWrite")
+						} else {
+							rateLimiter = cbs.rateLimiterForRead
+						}
+					}
+				}
+			default:
+				rateLimiter = cbs.rateLimiterForRead
+			}
+		}
+
 		// Wait until a token is obtained before processing the request
-		if cbs.rateLimiter.JLimit() {
+		if rateLimiter == nil || rateLimiter.JLimit() {
+			cbs.logger.Info("---------------rateLimiter")
 			http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
 			return
 		}
